@@ -17,14 +17,10 @@ y = data_train.target
 classes = list(set(y))
 n_classes = len(classes)
 
-#print X_counts.shape #print vector shape
-#print X_counts #print vector for each doc
-#print data_train.target #print vector for each doc
 model = TruncatedSVD(n_components=100).fit(X_tfidf)
 X_svd = model.transform(X_tfidf)
 
-#TODO On the other hand, LinearSVC implements “one-vs-the-rest” multi-class strategy, thus training n_class models
-clf = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True))#TODO na paikse ligo me tis parmetrous
+clf = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True))
 cv = StratifiedKFold(n_splits=10)
 colors = cycle(['cyan', 'indigo', 'seagreen', 'yellow', 'blue', 'darkorange', 'red', 'green', 'darkred', 'darkgreen'])
 accuracy = []
@@ -35,9 +31,9 @@ for (train, test), color in zip(cv.split(X_svd, y), colors):
     clf.fit(X_svd[train], y[train])
     predict = clf.predict(X_svd[test])
     y_score = clf.decision_function(X_svd[test])
-    # Compute ROC curve and area the curve
+
     accuracy.append(accuracy_score(y[test], predict))
-    precision.append(precision_score(y[test], predict, average='macro')) #TODO na dw ti paizei me to average....!!!!
+    precision.append(precision_score(y[test], predict, average='macro'))
     f1.append(f1_score(y[test], predict, average='macro'))
     recall.append(recall_score(y[test], predict, average='macro'))
 
