@@ -4,7 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import svm
 from itertools import cycle
 from sklearn.model_selection import StratifiedKFold
-
+from numpy import mean
 
 data_train = load_files('Dataset/')
 tfidf_vect = TfidfVectorizer(analyzer='word', stop_words='english')
@@ -32,6 +32,10 @@ for (train, test), color in zip(cv.split(X_tfidf, y), colors):
     f1.append(metrics.f1_score(y[test], predict, average='macro'))
     recall.append(metrics.recall_score(y[test], predict, average='macro'))
 
+print mean(accuracy)
+print mean(precision)
+print mean(f1)
+print mean(recall)
 
 #TODO
 '''
