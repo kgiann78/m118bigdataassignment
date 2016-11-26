@@ -1,3 +1,4 @@
+from numpy import mean
 from sklearn import metrics
 from sklearn.datasets import load_files
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -11,9 +12,13 @@ tfidf_vect = TfidfVectorizer(analyzer='word', stop_words='english')
 X_tfidf = tfidf_vect.fit_transform(data_train.data)
 y = data_train.target
 
-#print X_counts.shape #print vector shape
-#print X_counts #print vector for each doc
-#print data_train.target #print vector for each doc
+# Text management (experimenting on elements gathered from vectorizing the given text)
+# #print vector shape
+# print X_tfidf.shape
+# #print vector for each doc
+# print X_tfidf
+# #print vector for each doc
+# print data_train.target
 
 
 clf = RandomForestClassifier() #TODO na paikse ligo me tis parmetrous
