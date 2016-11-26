@@ -6,8 +6,8 @@ from itertools import cycle
 from sklearn.model_selection import StratifiedKFold
 
 data_train = load_files('Dataset/')
-count_vect = TfidfVectorizer(analyzer='word', stop_words='english')
-X_count = count_vect.fit_transform(data_train.data)
+tfidf_vect = TfidfVectorizer(analyzer='word', stop_words='english')
+X_tfidf = tfidf_vect.fit_transform(data_train.data)
 y = data_train.target
 
 #print X_counts.shape #print vector shape
@@ -22,9 +22,9 @@ accuracy = []
 precision = []
 f1 = []
 recall = []
-for (train, test), color in zip(cv.split(X_count, y), colors):
-    clf.fit(X_count[train], y[train])
-    predict =clf.predict(X_count[test])
+for (train, test), color in zip(cv.split(X_tfidf, y), colors):
+    clf.fit(X_tfidf[train], y[train])
+    predict =clf.predict(X_tfidf[test])
     # Compute ROC curve and area the curve
     accuracy.append(metrics.accuracy_score(y[test], predict))
     precision.append(metrics.precision_score(y[test], predict, average='macro')) #TODO na dw ti paizei me to average....!!!!
