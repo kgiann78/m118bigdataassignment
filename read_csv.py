@@ -1,6 +1,6 @@
 import os
 import zipfile
-
+import gensim
 path = 'Dataset/'
 
 zf = zipfile.ZipFile('Datasets-2016.zip')
