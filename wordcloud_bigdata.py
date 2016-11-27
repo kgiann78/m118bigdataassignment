@@ -29,4 +29,4 @@ word_cloud = WordCloud(stopwords=STOPWORDS).generate(text)
 plt.imshow(word_cloud)
 plt.axis("off")
 
-plt.show()
+plt.savefig('worldcloud.png')
