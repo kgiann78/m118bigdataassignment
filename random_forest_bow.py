@@ -108,4 +108,4 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver operating characteristic example')
 plt.legend(loc="lower right")
 
-plt.savefig('random_forest_svd_roc.png')
+plt.savefig('random_forest_bow_roc.png')
