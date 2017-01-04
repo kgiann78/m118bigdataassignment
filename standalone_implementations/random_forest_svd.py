@@ -1,11 +1,11 @@
 from sklearn.metrics import roc_curve, auc, accuracy_score, precision_score, f1_score, recall_score
 from sklearn.datasets import load_files
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn import svm
 from itertools import cycle
 from sklearn.model_selection import StratifiedKFold
-from sklearn.multiclass import OneVsRestClassifier
+from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import label_binarize
+from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 from scipy import interp
 import matplotlib.pyplot as plt
@@ -17,7 +17,10 @@ y = data_train.target
 classes = list(set(y))
 n_classes = len(classes)
 
-clf = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True))
+model = TruncatedSVD(n_components=90).fit(X_tfidf)
+X_svd = model.transform(X_tfidf)
+
+clf = RandomForestClassifier()
 cv = StratifiedKFold(n_splits=10)
 colors = cycle(['cyan', 'indigo', 'seagreen', 'yellow', 'blue', 'darkorange', 'red', 'green', 'darkred', 'darkgreen'])
 accuracy = []
@@ -30,11 +33,10 @@ lw = 2
 j = 1
 mean_tpr_final = 0.0
 mean_fpr_final = np.linspace(0, 1, 100)
-
-for (train, test), color in zip(cv.split(X_tfidf, y), colors):
-    clf.fit(X_tfidf[train], y[train])
-    predict = clf.predict(X_tfidf[test])
-    y_score = clf.decision_function(X_tfidf[test])
+for (train, test), color in zip(cv.split(X_svd, y), colors):
+    clf.fit(X_svd[train], y[train])
+    predict = clf.predict(X_svd[test])
+    proba_ = clf.predict_proba(X_svd[test])
 
     accuracy.append(accuracy_score(y[test], predict))
     precision.append(precision_score(y[test], predict, average='macro'))
@@ -45,9 +47,8 @@ for (train, test), color in zip(cv.split(X_tfidf, y), colors):
     tpr = dict()
     roc_auc = dict()
     y_test = label_binarize(y[test], classes=classes)
-
     for i in range(n_classes):
-        fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
+        fpr[i], tpr[i], _ = roc_curve(y_test[:, i], proba_[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
 
     '''
@@ -82,8 +83,8 @@ for (train, test), color in zip(cv.split(X_tfidf, y), colors):
              color=color, linestyle=':', linewidth=4)
     '''
     plt.plot(fpr["macro"], tpr["macro"],
-             label='macro-average ' + str(j) + ' fold ROC curve (area = {0:0.12f})'
-                                               ''.format(roc_auc["macro"]),
+             label='macro-average '+str(j)+' fold ROC curve (area = {0:0.12f})'
+                   ''.format(roc_auc["macro"]),
              color=color, linestyle='-.', linewidth=4)
     j += 1
 
@@ -92,7 +93,7 @@ print np.mean(precision)
 print np.mean(f1)
 print np.mean(recall)
 
-mean_tpr_final /= cv.get_n_splits(X_tfidf, y)
+mean_tpr_final /= cv.get_n_splits(X_svd, y)
 mean_tpr_final[-1] = 1.0
 mean_auc = auc(mean_fpr_final, mean_tpr_final)
 
@@ -109,4 +110,4 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver operating characteristic example')
 plt.legend(loc="lower right")
 
-plt.savefig('svm_bow_roc.png')
+plt.savefig('random_forest_svd_roc.png')

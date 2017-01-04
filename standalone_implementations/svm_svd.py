@@ -1,11 +1,10 @@
 from sklearn.metrics import roc_curve, auc, accuracy_score, precision_score, f1_score, recall_score
 from sklearn.datasets import load_files
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn import svm
+from sklearn.svm import LinearSVC
 from itertools import cycle
 from sklearn.model_selection import StratifiedKFold
 from sklearn.decomposition import TruncatedSVD
-from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import label_binarize
 import numpy as np
 from scipy import interp
@@ -19,10 +18,10 @@ y = data_train.target
 classes = list(set(y))
 n_classes = len(classes)
 
-model = TruncatedSVD(n_components=100).fit(X_tfidf)
+model = TruncatedSVD(n_components=90).fit(X_tfidf)
 X_svd = model.transform(X_tfidf)
 
-clf = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True))
+clf = LinearSVC(multi_class='ovr')
 cv = StratifiedKFold(n_splits=10)
 colors = cycle(['cyan', 'indigo', 'seagreen', 'yellow', 'blue', 'darkorange', 'red', 'green', 'darkred', 'darkgreen'])
 accuracy = []

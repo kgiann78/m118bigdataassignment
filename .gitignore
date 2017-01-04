@@ -11,3 +11,5 @@ Dataset/
 *.docx
 *.docx#
 *.zip
+*.png
+*.csv
