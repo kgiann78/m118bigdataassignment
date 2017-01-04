@@ -10,7 +10,7 @@ from nltk import word_tokenize
 from nltk.stem.porter import PorterStemmer
 from string import punctuation
 import numpy as np
-from gensim.models import doc2vec, Word2Vec
+from gensim.models import Word2Vec
 from sklearn.decomposition import TruncatedSVD
 
 stemmer = PorterStemmer()
