@@ -1,26 +1,23 @@
 from wordcloud import WordCloud, STOPWORDS
 import matplotlib.pyplot as plt
-from os import listdir
-import os.path
-import string
+import zipfile
+import pandas as pd
 
 if __name__ == "__main__":
-    path = "../Dataset/"
-    categories = []
-    text = ""
 
-    for category in listdir(path):
-        categories.append(category)
+    cloud = ""
 
-    for category in categories:
-        for f in listdir(path+category):
-            temp_path = path+category+'/'+f
-            if os.path.isfile(path+category+'/'+f):
-                with open(temp_path, 'r') as f_curr:
-                    s = f_curr.read()
-                    text = text+" "+s
+    zf = zipfile.ZipFile('../Datasets-2016.zip')
+    files = zf.open('train_set.csv')
+    df = pd.read_csv(files, sep='\t',
+                     names=['RowNum', 'Id', 'Title', 'Content', 'Category'])
 
-    word_cloud = WordCloud(stopwords=STOPWORDS).generate(text)
+    df['text']=df['Title'].map(str)+df['Content']
+
+    for i in range(1, df['text'].count()):
+        cloud = cloud+" "+df['text'][i]
+
+    word_cloud = WordCloud(stopwords=STOPWORDS).generate(cloud)
 
     plt.imshow(word_cloud)
     plt.axis("off")

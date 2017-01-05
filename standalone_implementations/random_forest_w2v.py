@@ -1,7 +1,4 @@
-from gensim.models import doc2vec
 from gensim.models import Word2Vec
-from sklearn.datasets import load_files
-from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import StratifiedKFold
 from itertools import cycle
 from sklearn.metrics import roc_curve, auc, accuracy_score, precision_score, f1_score, recall_score
@@ -10,6 +7,11 @@ from sklearn.preprocessing import label_binarize
 import numpy as np
 from scipy import interp
 import matplotlib.pyplot as plt
+import pandas as pd
+import zipfile
+from sklearn import preprocessing
+import string
+import time
 
 
 def avg_feature_vector(words, model, num_features, index2word_set):
@@ -28,43 +30,41 @@ def avg_feature_vector(words, model, num_features, index2word_set):
         featureVec = np.divide(featureVec, nwords)
     return featureVec
 
-data_train = load_files('Dataset/')
-count_vect = CountVectorizer(analyzer='word', stop_words='english')
-X_count = count_vect.fit_transform(data_train.data)
-y = data_train.target
+
+zf = zipfile.ZipFile('../Datasets-2016.zip')
+files = zf.open('train_set.csv')
+df = pd.read_csv(files, sep='\t', names=['RowNum', 'Id', 'Title', 'Content', 'Category'])
+df['text'] = df['Title'].map(str)+df['Content']
+start = int(round(time.time() * 1000))
+le = preprocessing.LabelEncoder()
+y = le.fit_transform(df['Category'][1:])
 classes = list(set(y))
 n_classes = len(classes)
 
-doc = count_vect.inverse_transform(X_count)
-sentences = []
+doc_word = []
+for i in range(1, df['text'].count()):
+    doc_word.append(str(df['text'][i]).translate(None, string.punctuation).split())
 
-for d in doc:
-    sentences.append(d.tolist())
-
-num_features = 300    # Word vector dimensionality #TODO 300
-min_word_count = 200   # Minimum word count #TODO 50
+num_features = 100    # Word vector dimensionality #TODO 300
+min_word_count = 50   # Minimum word count #TODO 200
 num_workers = 20       # Number of threads to run in parallel
-context = 1000          # Context window size
+context = 300          # Context window size #TODO 1000
 downsampling = 1e-2  # Downsample setting for frequent words
 
-word2vec_model = Word2Vec(sentences, workers=num_workers,
+word2vec_model = Word2Vec(doc_word, workers=num_workers,
             size=num_features, min_count=min_word_count,
             window=context)
 word2vec_model.init_sims(replace=True)
 index2word_set = word2vec_model.index2word
 
-'''
-model = doc2vec.Doc2Vec(docs, workers=num_workers, \
-            size=num_features, min_count = min_word_count, \
-            window = context, sample = downsampling, negative=5)
-'''
+
 # If you don't plan to train the model any further, calling
 # init_sims will make the model much more memory-efficient.
 word2vec_model.init_sims(replace=True)
 
 X_w2v = np.zeros(shape=(len(y), num_features))
 i = 0
-for sen in sentences:
+for sen in doc_word:
     X_w2v[i] = avg_feature_vector(sen, model=word2vec_model, num_features=num_features, index2word_set=index2word_set)
     i += 1
 
@@ -160,3 +160,6 @@ plt.title('Receiver operating characteristic example')
 plt.legend(loc="lower right")
 
 plt.savefig('random_forest_w2v_roc.png')
+end = int(round(time.time() * 1000))
+
+print "Execution Time: "+str(end-start)

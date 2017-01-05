@@ -12,7 +12,9 @@ from nltk.stem.porter import PorterStemmer
 from string import punctuation
 import matplotlib.pyplot as plt
 import time
-
+import pandas as pd
+import zipfile
+from sklearn import preprocessing
 
 def sample_kmeans(spark_context, sample_Xsvd, c_prev):
     doc_parallelize_sample = spark_context.parallelize(sample_Xsvd, 250)
@@ -65,21 +67,28 @@ if __name__ == "__main__":
 
     start = int(round(time.time() * 1000))
 
-    data_train = load_files('../Dataset/')
+    zf = zipfile.ZipFile('../Datasets-2016.zip')
+    files = zf.open('train_set.csv')
+    df = pd.read_csv(files, sep='\t', names=['RowNum', 'Id', 'Title', 'Content', 'Category'])
+    df['text'] = df['Title'].map(str)+df['Content']
+
     tfidf_vect = TfidfVectorizer(tokenizer=tokenize, analyzer='word', stop_words='english')
-    X_tfidf = tfidf_vect.fit_transform(data_train.data)
-    y = data_train.target
-    y_names = data_train.target_names
+    X_tfidf = tfidf_vect.fit_transform(df['text'][1:])
+
+    y_names = df['Category'][1:]
+    le = preprocessing.LabelEncoder()
+    y = le.fit_transform(df['Category'][1:])
+
     finished = False
     max_iter = 10
-    #model = TruncatedSVD(n_components=100).fit(X_tfidf)
-    #X_svd = model.transform(X_tfidf)
+    model = TruncatedSVD(n_components=100).fit(X_tfidf)
+    X_svd = model.transform(X_tfidf)
 
-    #sample_Xsvd = random.sample(X_svd, int(len(X_svd)*0.30))
-    #centroids_prev = random.sample(sample_Xsvd, 5)
-    #centroids_prev = sample_kmeans(sc, sample_Xsvd, centroids_prev)
+    sample_Xsvd = random.sample(X_svd, int(len(X_svd)*0.30))
+    centroids_prev = random.sample(sample_Xsvd, 5)
+    centroids_prev = sample_kmeans(sc, sample_Xsvd, centroids_prev)
 
-    #centroids_prev = random.sample(X_svd, 5)
+    centroids_prev = random.sample(X_svd, 5)
 
     doc_parallelize = sc.parallelize(X_tfidf, 250)
 

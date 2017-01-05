@@ -1,9 +1,7 @@
 from svm import svm
 from random_forest import random_forest
 from neural_networks import neural_networks
-from sklearn.datasets import load_files
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction.text import CountVectorizer
 import matplotlib.pyplot as plt
 import csv
 from nltk import word_tokenize
@@ -12,6 +10,10 @@ from string import punctuation
 import numpy as np
 from gensim.models import Word2Vec
 from sklearn.decomposition import TruncatedSVD
+import pandas as pd
+import zipfile
+from sklearn import preprocessing
+import string
 
 stemmer = PorterStemmer()
 
@@ -46,32 +48,34 @@ def avg_feature_vector(words, model, num_features, index2word_set):
 
 if __name__ == "__main__":
 
-    data_train = load_files('../Dataset/')
+    zf = zipfile.ZipFile('../Datasets-2016.zip')
+    files = zf.open('train_set.csv')
+    df = pd.read_csv(files, sep='\t', names=['RowNum', 'Id', 'Title', 'Content', 'Category'])
+    df['text'] = df['Title'].map(str)+df['Content']
+
     tfidf_vect = TfidfVectorizer(analyzer='word', stop_words='english')
-    X_tfidf = tfidf_vect.fit_transform(data_train.data)
-    count_vect = CountVectorizer(analyzer='word', stop_words='english')
-    X_count = count_vect.fit_transform(data_train.data)
-    doc_word = count_vect.inverse_transform(X_count)
+    X_tfidf = tfidf_vect.fit_transform(df['text'][1:])
 
     tfidf_vect_stemmer = TfidfVectorizer(tokenizer=tokenize, analyzer='word', stop_words='english')
-    X_tfidf_stemmer = tfidf_vect_stemmer.fit_transform(data_train.data)
-    y = data_train.target
+    X_tfidf_stemmer = tfidf_vect_stemmer.fit_transform(df['text'][1:])
+    le = preprocessing.LabelEncoder()
+    y = le.fit_transform(df['Category'][1:])
     classes = list(set(y))
     n_classes = len(classes)
-    sentences = []
 
     model = TruncatedSVD(n_components=90).fit(X_tfidf)
     X_svd = model.transform(X_tfidf)
 
-    for d in doc_word:
-        sentences.append(d.tolist())
+    doc_word = []
+    for i in range(1, df['text'].count()):
+        doc_word.append(str(df['text'][i]).translate(None, string.punctuation).split())
 
-    num_features = 300
-    min_word_count = 200
+    num_features = 100
+    min_word_count = 50
     num_workers = 20
-    context = 1000
+    context = 300
 
-    word2vec_model = Word2Vec(sentences, workers=num_workers,
+    word2vec_model = Word2Vec(doc_word, workers=num_workers,
                               size=num_features, min_count=min_word_count,
                               window=context)
     word2vec_model.init_sims(replace=True)
@@ -81,7 +85,7 @@ if __name__ == "__main__":
 
     X_w2v = np.zeros(shape=(len(y), num_features))
     i = 0
-    for sen in sentences:
+    for sen in doc_word:
         X_w2v[i] = avg_feature_vector(sen, model=word2vec_model, num_features=num_features,
                                       index2word_set=index2word_set)
         i += 1

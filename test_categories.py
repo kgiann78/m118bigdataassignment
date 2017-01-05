@@ -7,6 +7,9 @@ from nltk import word_tokenize
 from nltk.stem.porter import PorterStemmer
 from string import punctuation
 from sklearn.datasets import load_files
+import pandas as pd
+import zipfile
+from sklearn import preprocessing
 
 stemmer = PorterStemmer()
 
@@ -27,25 +30,27 @@ def tokenize(text):
 
 zf = zipfile.ZipFile('Datasets-2016.zip')
 files = zf.open('test_set.csv')
-files.readline()
-test_document_id = []
-test_document_text = []
-for f in files.readlines():
-    text = f.split('\t')
-    test_document_id.append(text[1])
-    test_document_text.append(text[2]+'\n'+text[3])
+dataframe = pd.read_csv(files, sep='\t', names=['RowNum', 'Id', 'Title', 'Content'])
+dataframe['test'] = dataframe['Title'].map(str)+dataframe['Content']
 
 
-data_train = load_files('Dataset/')
+files = zf.open('train_set.csv')
+df = pd.read_csv(files, sep='\t', names=['RowNum', 'Id', 'Title', 'Content', 'Category'])
+df['text'] = df['Title'].map(str)+df['Content']
+
+
 tfidf_vect = TfidfVectorizer(tokenizer=tokenize, analyzer='word', stop_words='english')
-tfidf_model = tfidf_vect.fit(data_train.data+test_document_text)
-y = data_train.target
+tfidf_model = tfidf_vect.fit(df['text'][1:].tolist()+dataframe['test'][1:].tolist())
+le = preprocessing.LabelEncoder()
+y = le.fit_transform(df['Category'][1:])
+classes = list(set(y))
+n_classes = len(classes)
 
-X_all = tfidf_model.transform(data_train.data+test_document_text)
+X_all = tfidf_model.transform(df['text'][1:].tolist()+dataframe['test'][1:].tolist())
 
-X_tfidf = tfidf_model.transform(data_train.data)
+X_tfidf = tfidf_model.transform(df['text'][1:].tolist())
 
-X_test = tfidf_model.transform(test_document_text)
+X_test = tfidf_model.transform(dataframe['test'][1:].tolist())
 
 
 model = TruncatedSVD(n_components=100).fit(X_all)
@@ -67,8 +72,8 @@ fieldnames = ['Test_Document_ID', 'Predicted_Category']
 with open('testSet_categories.csv', 'w') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter='\t')
     writer.writeheader()
-    i = 0
-    for p in predict:
-        writer.writerow({'Test_Document_ID': test_document_id[i],
-                         'Predicted_Category': data_train.target_names[p][:-1]})
+    i = 1
+    for p in le.inverse_transform(predict):
+        writer.writerow({'Test_Document_ID': dataframe['Id'][i],
+                         'Predicted_Category': p})
         i += 1

@@ -9,12 +9,18 @@ from sklearn.preprocessing import label_binarize
 import numpy as np
 from scipy import interp
 import matplotlib.pyplot as plt
+import pandas as pd
+import zipfile
+from sklearn import preprocessing
 
-data_train = load_files('Dataset/')
+zf = zipfile.ZipFile('../Datasets-2016.zip')
+files = zf.open('train_set.csv')
+df = pd.read_csv(files, sep='\t', names=['RowNum', 'Id', 'Title', 'Content', 'Category'])
+df['text'] = df['Title'].map(str)+df['Content']
 tfidf_vect = TfidfVectorizer(analyzer='word', stop_words='english')
-X_tfidf = tfidf_vect.fit_transform(data_train.data)
-y = data_train.target
-
+X_tfidf = tfidf_vect.fit_transform(df['text'][1:])
+le = preprocessing.LabelEncoder()
+y = le.fit_transform(df['Category'][1:])
 classes = list(set(y))
 n_classes = len(classes)
 
