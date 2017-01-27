@@ -1,7 +1,4 @@
-from gensim.models import doc2vec
 from gensim.models import Word2Vec
-from sklearn.datasets import load_files
-from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import StratifiedKFold
 from itertools import cycle
 from sklearn.metrics import roc_curve, auc, accuracy_score, precision_score, f1_score, recall_score
@@ -47,10 +44,10 @@ doc_word = []
 for i in range(1, df['text'].count()):
     doc_word.append(str(df['text'][i]).translate(None, string.punctuation).split())
 
-num_features = 100    # Word vector dimensionality #TODO 300
-min_word_count = 50   # Minimum word count #TODO 200
+num_features = 100    # Word vector dimensionality
+min_word_count = 50   # Minimum word count
 num_workers = 20       # Number of threads to run in parallel
-context = 300          # Context window size #TODO 1000
+context = 300          # Context window size
 downsampling = 1e-2  # Downsample setting for frequent words
 
 word2vec_model = Word2Vec(doc_word, workers=num_workers,

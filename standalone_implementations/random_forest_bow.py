@@ -23,7 +23,7 @@ y = le.fit_transform(df['Category'][1:])
 classes = list(set(y))
 n_classes = len(classes)
 
-clf = RandomForestClassifier()
+clf = RandomForestClassifier(warm_start=True)
 cv = StratifiedKFold(n_splits=10)
 colors = cycle(['cyan', 'indigo', 'seagreen', 'yellow', 'blue', 'darkorange', 'red', 'green', 'darkred', 'darkgreen'])
 accuracy = []

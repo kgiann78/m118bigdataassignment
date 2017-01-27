@@ -45,10 +45,10 @@ doc_word = []
 for i in range(1, df['text'].count()):
     doc_word.append(str(df['text'][i]).translate(None, string.punctuation).split())
 
-num_features = 100    # Word vector dimensionality #TODO 300
-min_word_count = 50   # Minimum word count #TODO 200
+num_features = 100    # Word vector dimensionality
+min_word_count = 50   # Minimum word count
 num_workers = 20       # Number of threads to run in parallel
-context = 300          # Context window size #TODO 1000
+context = 300          # Context window size
 downsampling = 1e-2  # Downsample setting for frequent words
 
 word2vec_model = Word2Vec(doc_word, workers=num_workers,
@@ -68,7 +68,7 @@ for sen in doc_word:
     X_w2v[i] = avg_feature_vector(sen, model=word2vec_model, num_features=num_features, index2word_set=index2word_set)
     i += 1
 
-clf = RandomForestClassifier()
+clf = RandomForestClassifier(warm_start=True)
 cv = StratifiedKFold(n_splits=10)
 colors = cycle(['cyan', 'indigo', 'seagreen', 'yellow', 'blue', 'darkorange', 'red', 'green', 'darkred', 'darkgreen'])
 accuracy = []

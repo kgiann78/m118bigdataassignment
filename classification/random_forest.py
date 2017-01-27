@@ -9,7 +9,7 @@ from scipy import interp
 
 def random_forest(X_tfidf, y, classes, n_classes, label, color_plot, plt):
 
-    clf = RandomForestClassifier()
+    clf = RandomForestClassifier(warm_start=True)
     cv = StratifiedKFold(n_splits=10)
     colors = cycle(['cyan', 'indigo', 'seagreen', 'yellow', 'blue', 'darkorange', 'red', 'green', 'darkred', 'darkgreen'])
     accuracy = []

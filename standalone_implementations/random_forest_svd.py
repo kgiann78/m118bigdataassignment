@@ -27,7 +27,7 @@ n_classes = len(classes)
 model = TruncatedSVD(n_components=90).fit(X_tfidf)
 X_svd = model.transform(X_tfidf)
 
-clf = RandomForestClassifier()
+clf = RandomForestClassifier(warm_start=True)
 cv = StratifiedKFold(n_splits=10)
 colors = cycle(['cyan', 'indigo', 'seagreen', 'yellow', 'blue', 'darkorange', 'red', 'green', 'darkred', 'darkgreen'])
 accuracy = []
