@@ -1,4 +1,3 @@
-from sklearn.datasets import load_files
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.metrics.pairwise import cosine_similarity
@@ -16,19 +15,35 @@ import pandas as pd
 import zipfile
 from sklearn import preprocessing
 
+
+def stem_tokens(tokens, stemmer):
+    stemmed = []
+    for item in tokens:
+        stemmed.append(stemmer.stem(item))
+    return stemmed
+
+
+def tokenize(text):
+    stemmer = PorterStemmer()
+    tokens = word_tokenize(text)
+    tokens = [i for i in tokens if i not in punctuation]
+    stems = stem_tokens(tokens, stemmer)
+    return stems
+
+
+def doc_mapper(doc):
+    max_similarity = -1
+    for i in range(len(centroids_prev)):
+        temp_similarity = cosine_similarity([doc], [centroids_prev[i]])[0][0]
+        if max_similarity <= temp_similarity:
+            max_similarity = temp_similarity
+            result = i
+    return result, doc
+
+
 def sample_kmeans(spark_context, sample_Xsvd, c_prev):
     doc_parallelize_sample = spark_context.parallelize(sample_Xsvd, 250)
     finish = False
-
-    def doc_mapper(doc):
-        max_similarity = -1
-        for i in range(len(c_prev)):
-            temp_similarity = cosine_similarity([doc], [c_prev[i]])[0][0]
-            if max_similarity <= temp_similarity:
-                max_similarity = temp_similarity
-                result = i
-
-        return result, doc
 
     while not finish:
         map_doc = doc_parallelize_sample.map(doc_mapper)
@@ -47,20 +62,6 @@ def sample_kmeans(spark_context, sample_Xsvd, c_prev):
     return c_prev
 
 
-def stem_tokens(tokens, stemmer):
-    stemmed = []
-    for item in tokens:
-        stemmed.append(stemmer.stem(item))
-    return stemmed
-
-
-def tokenize(text):
-    stemmer = PorterStemmer()
-    tokens = word_tokenize(text)
-    tokens = [i for i in tokens if i not in punctuation]
-    stems = stem_tokens(tokens, stemmer)
-    return stems
-
 if __name__ == "__main__":
     spark_conf = SparkConf().setAppName("kmeans_pyspark").setMaster("local[*]")
     sc = SparkContext(conf=spark_conf)
@@ -75,7 +76,7 @@ if __name__ == "__main__":
     tfidf_vect = TfidfVectorizer(tokenizer=tokenize, analyzer='word', stop_words='english')
     X_tfidf = tfidf_vect.fit_transform(df['text'][1:])
 
-    y_names = df['Category'][1:]
+    y_names = set(df['Category'][1:].values)
     le = preprocessing.LabelEncoder()
     y = le.fit_transform(df['Category'][1:])
 
@@ -88,22 +89,10 @@ if __name__ == "__main__":
     centroids_prev = random.sample(sample_Xsvd, 5)
     centroids_prev = sample_kmeans(sc, sample_Xsvd, centroids_prev)
 
-    centroids_prev = random.sample(X_svd, 5)
-
-    doc_parallelize = sc.parallelize(X_tfidf, 250)
-
-    def doc_mapper(doc):
-        max_similarity = -1
-        for i in range(len(centroids_prev)):
-            temp_similarity = cosine_similarity([doc], [centroids_prev[i]])[0][0]
-            if max_similarity <= temp_similarity:
-                max_similarity = temp_similarity
-                result = i
-        return result, doc
-
+    doc_parallelize = sc.parallelize(X_svd, 250)
 
     j = 0
-    #while not finished:
+
     while not finished and j <= max_iter:
         map_doc = doc_parallelize.map(doc_mapper)
 
@@ -126,8 +115,6 @@ if __name__ == "__main__":
         cluster_dict[d].append(y[i])
         i += 1
 
-    print 'max_iter: '+str(j)
-    print centroids_prev
     end = int(round(time.time() * 1000))
 
     print "Execution Time: "+str(end-start)
@@ -135,11 +122,11 @@ if __name__ == "__main__":
     column_labels = []
     row_labels = []
     data = np.zeros(shape=(len(y_names), len(y_names)))
-    with open('clustering_KMeans_tfidf.csv', 'w') as csvfile:
+    with open('clustering_KMeans.csv', 'w') as csvfile:
         fieldnames = [' ']
         for names in y_names:
-            fieldnames.append(names[:-1])
-            row_labels.append(names[:-1])
+            fieldnames.append(names)
+            row_labels.append(names)
 
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter='\t')
         writer.writeheader()
@@ -150,7 +137,7 @@ if __name__ == "__main__":
             counter = Counter(cluster_dict[key])
             j = 0
             for k, value in counter.iteritems():
-                temp_cluster_dict[y_names[k][:-1]] = value/float(sum(counter.values()))
+                temp_cluster_dict[le.inverse_transform(k)] = value/float(sum(counter.values()))
                 data[i][j] = value/float(sum(counter.values()))
                 j += 1
             writer.writerow(temp_cluster_dict)
@@ -168,4 +155,4 @@ if __name__ == "__main__":
 
     ax.set_xticklabels(row_labels, minor=False)
     ax.set_yticklabels(column_labels, minor=False)
-    plt.savefig('clustering_KMeans_tfidf.png')
+    plt.savefig('clustering_KMeans.png')
