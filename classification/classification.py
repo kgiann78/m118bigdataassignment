@@ -17,20 +17,21 @@ import string
 
 stemmer = PorterStemmer()
 
-
+# Stem tokens
+# Stemmers remove morphological affixes from words, leaving only the word stem.
 def stem_tokens(tokens, stemmer):
     stemmed = []
     for item in tokens:
         stemmed.append(stemmer.stem(item))
     return stemmed
 
-
+# Tokenize text
+# Tokenizers divide strings into lists of substrings.
 def tokenize(text):
     tokens = word_tokenize(text)
     tokens = [i for i in tokens if i not in punctuation]
     stems = stem_tokens(tokens, stemmer)
     return stems
-
 
 def avg_feature_vector(words, model, num_features, index2word_set):
 
@@ -48,6 +49,9 @@ def avg_feature_vector(words, model, num_features, index2word_set):
 
 if __name__ == "__main__":
 
+    #
+    #   Prepare data
+    #
     zf = zipfile.ZipFile('../Datasets-2016.zip')
     files = zf.open('train_set.csv')
     df = pd.read_csv(files, sep='\t', names=['RowNum', 'Id', 'Title', 'Content', 'Category'])
