@@ -104,7 +104,7 @@ if __name__ == "__main__":
     # Learn vocabulary and idf, return term-document matrix for concatenated text
     X_tfidf = tfidf_vect.fit_transform(df['text'][1:])
 
-    # Encode labels with value between 0 and n_classes-1.
+    # Encode labels with value between 1 to n (where n the count of values).
     y_names = set(df['Category'][1:].values)
     le = preprocessing.LabelEncoder()
 

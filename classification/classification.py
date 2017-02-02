@@ -55,25 +55,51 @@ if __name__ == "__main__":
     zf = zipfile.ZipFile('../Datasets-2016.zip')
     files = zf.open('train_set.csv')
     df = pd.read_csv(files, sep='\t', names=['RowNum', 'Id', 'Title', 'Content', 'Category'])
+
+    # Concatenate Title and Content into text
     df['text'] = df['Title'].map(str)+df['Content']
 
+    #
+    #   BOW classification
+    #
+
+    #   Create the tf-idf "vectorizer" for words
     tfidf_vect = TfidfVectorizer(analyzer='word', stop_words='english')
+    # Produce the tf-idf vector
     X_tfidf = tfidf_vect.fit_transform(df['text'][1:])
 
+
+    #
+    # tf-idf stemmer for neural networks
+    #
+
+    # Create the tf-idf vectorized stemmer
     tfidf_vect_stemmer = TfidfVectorizer(tokenizer=tokenize, analyzer='word', stop_words='english')
+    # Produce the stemmed tf-idf vector
     X_tfidf_stemmer = tfidf_vect_stemmer.fit_transform(df['text'][1:])
+
+    # Create and produce labels from 1 to n
     le = preprocessing.LabelEncoder()
     y = le.fit_transform(df['Category'][1:])
     classes = list(set(y))
     n_classes = len(classes)
 
+    #
+    #   SVD
+    #
     model = TruncatedSVD(n_components=90).fit(X_tfidf)
     X_svd = model.transform(X_tfidf)
 
+    #
+    #   Create and populate words' vector
+    #
     doc_word = []
     for i in range(1, df['text'].count()):
         doc_word.append(str(df['text'][i]).translate(None, string.punctuation).split())
 
+    #
+    #   W2V
+    #
     num_features = 100
     min_word_count = 50
     num_workers = 20
@@ -87,12 +113,17 @@ if __name__ == "__main__":
 
     word2vec_model.init_sims(replace=True)
 
+    # Get the average
     X_w2v = np.zeros(shape=(len(y), num_features))
     i = 0
     for sen in doc_word:
         X_w2v[i] = avg_feature_vector(sen, model=word2vec_model, num_features=num_features,
                                       index2word_set=index2word_set)
         i += 1
+
+    #
+    #   Plot classification
+    #
 
     plt.figure(figsize=(12, 12))
     lw = 2
@@ -109,6 +140,8 @@ if __name__ == "__main__":
     metrics_list = ['Accuracy', 'Precision', 'Recall', 'F-Measure', 'AUC']
     fieldnames = ['Statistic Measure', 'SVM (BoW)', 'Random Forest (BoW)', 'SVM (SVD)', 'Random Forest (SVD)',
                   'SVM (W2V)', 'Random Forest (W2V)', 'Neural Networks (SVD)']
+
+    # produce svm and random_forests for classifications
     svm_bow_metrics = svm(X_tfidf, y, classes, n_classes, labels[0], colors[0], plt)
     svm_svd_metrics = svm(X_svd, y, classes, n_classes, labels[1], colors[1], plt)
     svm_w2v_metrics = svm(X_w2v, y, classes, n_classes, labels[2], colors[2], plt)
@@ -116,6 +149,7 @@ if __name__ == "__main__":
     random_forest_svd_metrics = random_forest(X_svd, y, classes, n_classes, labels[4], colors[4], plt)
     random_forest_w2v_metrics = random_forest(X_w2v, y, classes, n_classes, labels[5], colors[5], plt)
 
+    # produce neural networks
     neural_networks_metrics = neural_networks(X_tfidf_stemmer, y, classes, n_classes, labels[6], colors[6], plt)
 
     with open('EvaluationMetric_10fold.csv', 'w') as csvfile:

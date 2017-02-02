@@ -7,10 +7,13 @@ import numpy as np
 from scipy import interp
 
 
+# Linear Support Vector regression
 def svm(X_tfidf, y, classes, n_classes, label, color_plot, plt):
-
+    # Create the model
     clf = LinearSVC(multi_class='ovr')
+    # 10-fold Cross Validation
     cv = StratifiedKFold(n_splits=10)
+    # Colours for the 10-fold validation
     colors = cycle(['cyan', 'indigo', 'seagreen', 'yellow', 'blue', 'darkorange', 'red', 'green', 'darkred', 'darkgreen'])
     accuracy = []
     precision = []
@@ -23,8 +26,12 @@ def svm(X_tfidf, y, classes, n_classes, label, color_plot, plt):
     mean_fpr_final = np.linspace(0, 1, 100)
 
     for (train, test), color in zip(cv.split(X_tfidf, y), colors):
+        # train classification
         clf.fit(X_tfidf[train], y[train])
+
+        # Predict class labels for samples in test
         predict = clf.predict(X_tfidf[test])
+        # Predict confidence scores for test
         y_score = clf.decision_function(X_tfidf[test])
 
         accuracy.append(accuracy_score(y[test], predict))

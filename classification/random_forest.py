@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 from scipy import interp
 
-
+# Random forest classification
 def random_forest(X_tfidf, y, classes, n_classes, label, color_plot, plt):
 
     clf = RandomForestClassifier(warm_start=True)
