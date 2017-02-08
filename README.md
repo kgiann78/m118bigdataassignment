@@ -23,7 +23,8 @@ All algorithms use the path of Dataset.zip, which contains 2 csv files:
    Preprocess: Remove stop words, stemming\
    Input: SVD vectors from tf-idf Vectors of the documents\
    First Step: Map Reduce K-Means for a random sample, 30% of actual dataset, to get more suitable centroids\
-   Second Step: Map Reduce K-Means for full dataset
+   Second Step: Map Reduce K-Means for full dataset\
+   spark-submit kmeans_mapreduce.py (spark folder @ PATH)
 7. test_categories.py - Categorize new documents\
    Preprocess: Remove stop words, stemming\
    Input Data: SVD vectors from Tf-idf Vectors of the documents\
